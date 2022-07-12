@@ -2,33 +2,25 @@
 
 stages:
   - test
-  - test_results
+  - jira_sync
 
 
 dependency_scanning:
   image: node:latest
   stage: test
   script:
-    # Install npm, snyk, and snyk-to-html
+    # Install npm and snyk
     - npm install -g npm@latest
     - npm install -g snyk
-    - npm install snyk-to-html -g
     # SNYK_TOKEN is made a masked variable in GitLab CI/CD settings.
     - snyk auth $SNYK_TOKEN
     # run snyk monitor to monitor open source projects via the Snyk CLI
     - snyk monitor
-  
- 
-  # Save report from Snyk test to artifacts
-  artifacts:
-    when: always
-    paths: 
-      - snyk_results.html
 
 # The README for this tool includes helpful configuration info: https://github.com/snyk-tech-services/jira-tickets-for-new-vulns
 jira_tickets_for_new_snyk_vulns:
   image: ubuntu:latest
-  stage: test_results
+  stage: jira_sync
   # Similarly to SNYK_TOKEN, you can set these variables in CI/CD Settings in GL. 
   variables:
     orgID: <OrgID>
