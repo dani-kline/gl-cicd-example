@@ -1,6 +1,5 @@
 # Example Snyk script for GitLab CI/CD Pipeline with Node.js project using Jira Snyk Sync
 
-
 stages:
   - test
   - test_results
@@ -14,13 +13,15 @@ dependency_scanning:
     - npm install -g npm@latest
     - npm install -g snyk
     - npm install snyk-to-html -g
-    # Run snyk help, snyk auth, snyk monitor, snyk test to break build and out report
-    - snyk --help
     - snyk auth $SNYK_TOKEN
+    # run snyk monitor to monitor open source projects via the Snyk CLI
     - snyk monitor --project-name=goof-gitlab
-    - snyk test --json | snyk-to-html -o snyk_results.html
+    # This is where configuration would vary if wanting to gate at CI/CD. If you set the snyk test to fail on vulns, the
+    # snyk test can be in a stage after jira_tickets_for_new_vulns so that breaking the build doesn't result in the
+    # jira issues not being created. If not intending to gate, snyk test || true can be used.
+    - snyk test --json | snyk-to-html -o snyk_results.html || true
  
-  # Save report to artifacts
+  # Save report from Snyk test to artifacts
   artifacts:
     when: always
     paths: 
@@ -37,7 +38,7 @@ jira_tickets_for_new_snyk_vulns:
     # severity: <severity>
   script:
     # do i need to use sudo here? I don't think so because I'm using a docker image but I'm not sure
-    curl -LO 'https://github.com/snyk-tech-services/jira-tickets-for-new-vulns/releases/download/1.25.0/snyk-jira-sync-linux'
-    chmod +x snyk-jira-sync-linux
-    ls -l
-    ./snyk-jira-sync-linux --orgID $orgID --token $SNYK_TOKEN --jiraProjectKey $jiraProjectKey --severity $severity --projectID $projectID --debug True
+    - curl -LO 'https://github.com/snyk-tech-services/jira-tickets-for-new-vulns/releases/download/1.25.0/snyk-jira-sync-linux'
+    - chmod +x snyk-jira-sync-linux
+    - ls -l
+    - ./snyk-jira-sync-linux --orgID $orgID --token $SNYK_TOKEN --jiraProjectKey $jiraProjectKey --severity $severity --projectID $projectID --debug True
