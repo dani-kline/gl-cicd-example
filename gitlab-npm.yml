@@ -8,20 +8,16 @@ stages:
 dependency_scanning:
   image: node:latest
   stage: test
-  variables:
-    SNYK_TOKEN: $SNYK_TOKEN
   script:
     # Install npm, snyk, and snyk-to-html
     - npm install -g npm@latest
     - npm install -g snyk
     - npm install snyk-to-html -g
+    # SNYK_TOKEN is made a masked variable in GitLab CI/CD settings.
     - snyk auth $SNYK_TOKEN
     # run snyk monitor to monitor open source projects via the Snyk CLI
-    - snyk monitor --project-name=goof-gitlab
-    # This is where configuration would vary if wanting to gate at CI/CD. If you set the snyk test to fail on vulns, the
-    # snyk test can be in a stage after jira_tickets_for_new_vulns so that breaking the build doesn't result in the
-    # jira issues not being created. If not intending to gate, snyk test || true can be used.
-    - snyk test --json | snyk-to-html -o snyk_results.html || true
+    - snyk monitor
+  
  
   # Save report from Snyk test to artifacts
   artifacts:
@@ -29,19 +25,19 @@ dependency_scanning:
     paths: 
       - snyk_results.html
 
+# The README for this tool includes helpful configuration info: https://github.com/snyk-tech-services/jira-tickets-for-new-vulns
 jira_tickets_for_new_snyk_vulns:
   image: ubuntu:latest
   stage: test_results
+  # Similarly to SNYK_TOKEN, you can set these variables in CI/CD Settings in GL. 
   variables:
-    SNYK_TOKEN: $SNYK_TOKEN
     orgID: <OrgID>
     jiraProjectKey: <jiraProjectKey>
-    # projectID: <projectID>
-    # severity: <severity>
+    severity: <severity>
    script:
     - apt-get update
     - apt-get install curl -y
-    - curl -LO 'https://github.com/snyk-tech-services/jira-tickets-for-new-vulns/releases/download/1.25.0/snyk-jira-sync-linux'
+    - curl -LO 'https://github.com/snyk-tech-services/jira-tickets-for-new-vulns/releases/download/1.29.0/snyk-jira-sync-linux'
     - chmod +x snyk-jira-sync-linux
     - ls -l
-    - sudo ./snyk-jira-sync-linux --orgID $orgID --token $SNYK_TOKEN --jiraProjectKey $jiraProjectKey --severity $severity --projectID $projectID --debug True
+    - ./snyk-jira-sync-linux --orgID $orgID --token $SNYK_TOKEN --jiraProjectKey $jiraProjectKey --severity $severity --debug True
