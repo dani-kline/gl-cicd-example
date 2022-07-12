@@ -8,6 +8,8 @@ stages:
 dependency_scanning:
   image: node:latest
   stage: test
+  variables:
+    SNYK_TOKEN: $SNYK_TOKEN
   script:
     # Install npm, snyk, and snyk-to-html
     - npm install -g npm@latest
@@ -36,9 +38,10 @@ jira_tickets_for_new_snyk_vulns:
     jiraProjectKey: <jiraProjectKey>
     # projectID: <projectID>
     # severity: <severity>
-  script:
-    # do i need to use sudo here? I don't think so because I'm using a docker image but I'm not sure
+   script:
+    - apt-get update
+    - apt-get install curl -y
     - curl -LO 'https://github.com/snyk-tech-services/jira-tickets-for-new-vulns/releases/download/1.25.0/snyk-jira-sync-linux'
     - chmod +x snyk-jira-sync-linux
     - ls -l
-    - ./snyk-jira-sync-linux --orgID $orgID --token $SNYK_TOKEN --jiraProjectKey $jiraProjectKey --severity $severity --projectID $projectID --debug True
+    - sudo ./snyk-jira-sync-linux --orgID $orgID --token $SNYK_TOKEN --jiraProjectKey $jiraProjectKey --severity $severity --projectID $projectID --debug True
